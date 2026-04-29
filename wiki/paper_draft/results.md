@@ -18,6 +18,10 @@ The effect on tool-use turns diverged sharply across model tiers.
 
 *Table 1. Sonnet results (n = 100/group, runs 1+2 pooled).*
 
+![Tool-use turns distribution — Sonnet vs Opus](../../figures/fig1_turns_violin.png)
+
+*Figure 1. Distribution of tool-use turns per group for Sonnet (left) and Opus (right). White dots indicate means. Significance brackets show Mann-Whitney U tests (** p<0.01, * p<0.05).*
+
 **Opus.** The pattern reversed. Group B (time + attempt count) used significantly more turns than control: mean 8.26 vs. 7.62, U = 912, p = 0.012, d = 0.44. Group C (attempt only) trended in the same direction but did not reach significance: mean 8.14 vs. 7.62, p = 0.097, d = 0.36. Group B and Group C did not differ from each other (p = 0.49).
 
 | Group | Condition | Mean turns | SD | vs. A (p) | d |
@@ -27,6 +31,14 @@ The effect on tool-use turns diverged sharply across model tiers.
 | C | Attempt only | 8.14 | 1.17 | 0.097 ns | 0.36 |
 
 *Table 2. Opus results (n = 50/group).*
+
+![Mean turns by group and model](../../figures/fig2_means_bar.png)
+
+*Figure 2. Mean tool-use turns ± SEM by group and model. Error bars show standard error of the mean.*
+
+![Direction of effect by model tier](../../figures/fig3_direction.png)
+
+*Figure 3. Delta turns vs. control by condition and model. Negative = fewer turns than control. The effect direction reverses between Sonnet and Opus. (** p<0.01, * p<0.05, ns = not significant)*
 
 ## Replication Consistency
 
