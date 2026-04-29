@@ -107,7 +107,7 @@ Each trial was run as a single Claude Code session. The agent was not interrupte
 
 **Solve rate:** whether the final state of `solution.py` passed all unit tests, evaluated by executing the test suite in a subprocess after the session ended. This provides an independent verification that does not rely on the agent's self-report.
 
-**Tool-use turns:** the `num_turns` field returned by the Claude Code session JSON output, representing the total number of internal tool invocations (read, edit, bash) plus reasoning steps in the agent loop. This is our primary efficiency metric.
+**Tool-use turns:** the `num_turns` field returned by the Claude Code session JSON output. We verified via stream-JSON inspection that `num_turns` counts the number of times the Claude API is invoked within a session — specifically, 1 (initial call) plus 1 per tool result returned to the model. Each tool result triggers a new API call in which the model decides its next action. Multiple tool calls batched in a single model response count as one turn (until their results are returned). This means `num_turns` is a direct proxy for API call count, which maps linearly to cost and latency. It does not count internal reasoning tokens or chain-of-thought steps; it counts discrete action-planning cycles. This is our primary efficiency metric.
 
 ## Statistical Analysis
 
