@@ -50,9 +50,21 @@ The most adjacent work is TALE (Han et al., 2024), which injects a token budget 
 
 The critical distinction is the level of operation. TALE measures output token counts in single-call reasoning tasks (math, logical inference). Our work measures tool-use turns in multi-step agentic loops with external tool execution and pass/fail test oracles. A token budget and an attempt count budget operate on different computational primitives: one constrains reasoning verbosity within a single inference call; the other constrains action selection across an iterative agent loop. TALE does not study temporal signals, elapsed time, multi-model effects, or agentic tool use. Our finding that the direction of effect depends on model capability has no analogue in the TALE results.
 
+## Practitioner Implementations
+
+Independent of the academic literature, practitioners have begun implementing iteration budget signals in production agent harnesses — confirming the intuition that motivates this paper, and underscoring the absence of empirical evidence.
+
+TraceCoder (Rorseth et al., 2025), a multi-agent debugging framework, informs the repair agent how many cycles have been executed and how many remain before each turn. Pass@1 accuracy improves consistently as max attempts increases, but the paper treats attempt count as an architectural parameter, not an experimental variable. No controlled comparison with a no-count baseline is reported.
+
+An open feature request in the hermes-agent harness (NousResearch, 2025) proposes a two-tier "iteration budget pressure" system: a caution message injected at 70% of max iterations ("start consolidating your work") and a warning at 90% ("provide your final response NOW"). The proposal is motivated by observed failure modes where agents silently exhaust iterations making tool calls without producing a substantive response. The feature remains unmerged at the time of writing, and no effectiveness data has been reported.
+
+LiteLLM implements iteration budgets as a hard server-side cap (HTTP 429 after N calls) rather than a context injection — a gating mechanism, not a planning signal.
+
+These implementations collectively demonstrate that the practitioner community has identified the need for attempt-aware agents. Our experiment is the first to study this systematically: isolating the causal effect of attempt count injection, comparing it against elapsed time, measuring the outcome on a controlled benchmark, and testing whether the effect generalizes across model tiers.
+
 ## Gap Addressed by This Work
 
-None of the prior work directly manipulates temporal signals as independent variables in a tool-using agent setting with a pass/fail oracle. Self-Refine does not track elapsed time or attempt count as a context variable. CoALA identifies metareasoning as a gap but offers no empirical test. The temporal reasoning and memory papers study retrieval quality and comprehension, not downstream agent behavior in an action loop. TALE establishes that budget signals affect single-call reasoning, but does not study agentic loops, tool use, temporal signals, or cross-model effects. Our experiment is the first to isolate elapsed time vs. attempt count in a controlled, agentic debugging task — and the first to show that the effect direction depends on model capability.
+None of the prior work directly manipulates temporal signals as independent variables in a tool-using agent setting with a pass/fail oracle. Self-Refine does not track elapsed time or attempt count as a context variable. CoALA identifies metareasoning as a gap but offers no empirical test. The temporal reasoning and memory papers study retrieval quality and comprehension, not downstream agent behavior in an action loop. TALE establishes that budget signals affect single-call reasoning, but does not study agentic loops, tool use, temporal signals, or cross-model effects. TraceCoder and hermes-agent confirm practitioner demand but provide no controlled measurements. Our experiment is the first to isolate elapsed time vs. attempt count in a controlled, agentic debugging task — and the first to show that the effect direction depends on model capability.
 
 ---
 
