@@ -1,6 +1,6 @@
 # Related Work
 
-Our experiment sits at the intersection of three research streams that have not previously been connected: iterative refinement in LLM agents, temporal reasoning in language models, and memory architecture for long-horizon agents.
+Our experiment sits at the intersection of three research streams that have not previously been connected: iterative refinement in LLM agents, temporal reasoning in language models, and memory architecture for long-horizon agents. A fourth adjacent stream — budget-aware prompting — is most closely related but addresses a different level of the problem.
 
 ## Iterative Refinement
 
@@ -22,6 +22,12 @@ MemGPT (Packer et al., 2023) and the Episodic Memory framework (Pink et al., 202
 
 Episodic memory theory (Pink et al., 2025) identifies five properties that distinguish episodic from other memory types, including *contextual relations* — encoding when, where, and who, with temporal order as a primary retrieval dimension. The paper argues that ordinal position (which episode was this?) is the tractable episodic index, not wall-clock time. A failed debugging attempt is an episode in this sense; knowing it was attempt N-1 provides more actionable context than knowing it happened 47 seconds ago.
 
+## Budget-Aware Prompting
+
+The most adjacent work is TALE (Han et al., 2024), which injects a token budget into chain-of-thought prompts ("let's think step by step and use less than N tokens"). TALE shows that including a token budget reduces CoT output length by 68% on average while maintaining accuracy within 5%. The mechanism is directly analogous to our attempt count signal: both provide a resource constraint that the model uses to calibrate planning depth.
+
+The critical distinction is the level of operation. TALE measures output token counts in single-call reasoning tasks (math, logical inference). Our work measures tool-use turns in multi-step agentic loops with external tool execution and pass/fail test oracles. A token budget and an attempt count budget operate on different computational primitives: one constrains reasoning verbosity within a single inference call; the other constrains action selection across an iterative agent loop. TALE does not study temporal signals, elapsed time, multi-model effects, or agentic tool use. Our finding that the direction of effect depends on model capability has no analogue in the TALE results.
+
 ## Gap Addressed by This Work
 
-None of the prior work directly manipulates temporal signals as independent variables in a tool-using agent setting with a pass/fail oracle. Self-Refine does not track elapsed time or attempt count as a context variable. CoALA identifies metareasoning as a gap but offers no empirical test. The temporal reasoning and memory papers study retrieval quality and comprehension, not downstream agent behavior in an action loop. Our experiment is the first to isolate elapsed time vs. attempt count in a controlled, agentic debugging task — and the first to show that the effect direction depends on model capability.
+None of the prior work directly manipulates temporal signals as independent variables in a tool-using agent setting with a pass/fail oracle. Self-Refine does not track elapsed time or attempt count as a context variable. CoALA identifies metareasoning as a gap but offers no empirical test. The temporal reasoning and memory papers study retrieval quality and comprehension, not downstream agent behavior in an action loop. TALE establishes that budget signals affect single-call reasoning, but does not study agentic loops, tool use, temporal signals, or cross-model effects. Our experiment is the first to isolate elapsed time vs. attempt count in a controlled, agentic debugging task — and the first to show that the effect direction depends on model capability.
