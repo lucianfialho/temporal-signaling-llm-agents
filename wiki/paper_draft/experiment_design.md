@@ -27,10 +27,32 @@ Groups differed only in what preceded this prompt:
 
 - **Group A (control):** no prefix — the task prompt above, verbatim.
 - **Group B (time + attempt):** prefix `[session_elapsed: {Xs} | attempt: 1/5]` plus a system prompt addition instructing the agent to use elapsed time to adapt its strategy if stuck.
-- **Group C (attempt only):** prefix `[attempt: 1/5]` with no system prompt addition and no elapsed time.
+- **Group C (attempt only):** prefix `[attempt: 1/5]` plus a system prompt addition instructing the agent to try a different approach if previous attempts failed. No elapsed time.
 - **Group D (instruction only, post-hoc):** no prefix and no temporal signal, but the same system prompt addition as Group B: *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach."* Group D was added after the initial draft to address the instruction confound in Group B: if the Group C effect were driven by the instruction framing rather than the count signal, Group D should replicate it. Group D was run on Sonnet only (n=50).
 
 The elapsed time in Group B was measured from session initialization to the moment the prompt was issued (typically 0–2 seconds for the first attempt, as each trial was a fresh session). The denominator `5` was fixed across all trials.
+
+## Exact Prompts
+
+**Group A** — no system prompt addition. Task prompt only (see above).
+
+**Group B system prompt:**
+> "You are a debugging assistant. As you work, you will be told how much time has elapsed and how many attempts you've made. Use this information to adapt your debugging strategy — if you've been working a long time without success, try a fundamentally different approach."
+
+**Group C system prompt:**
+> "You are a debugging assistant. You will be told how many attempts you've made. If previous attempts failed, try a different approach."
+
+**Group D system prompt:**
+> "You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach."
+
+**Task prompt (all groups):**
+> "The function `[entry_point]` in `[path]/solution.py` has a bug. Run `python test_runner.py` to see the test results. Fix the bug in `solution.py` so all tests pass. When done, run the tests one final time to confirm."
+
+**Prompt prefix by group:**
+- Group A: no prefix
+- Group B: `[session_elapsed: {X}s | attempt: 1/5]`
+- Group C: `[attempt: 1/5]`
+- Group D: no prefix
 
 Each trial was run as a single Claude Code session. The agent was not interrupted; it ran until it either confirmed all tests passed or exhausted its internal reasoning budget.
 
@@ -42,13 +64,13 @@ Each trial was run as a single Claude Code session. The agent was not interrupte
 
 ## Statistical Analysis
 
-Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-use turn distributions were tested with the Mann-Whitney U test (two-tailed), which makes no distributional assumptions. Effect sizes are reported as Cohen's d for turns and odds ratio for solve rate. The significance threshold is α = 0.05. No corrections for multiple comparisons were applied given the pre-registered comparison structure (A vs. B, A vs. C, B vs. C per model).
+Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-use turn distributions were tested with the Mann-Whitney U test (two-tailed), which makes no distributional assumptions. Effect sizes are reported as Cohen's d for turns and odds ratio for solve rate. The significance threshold is α = 0.05. No corrections for multiple comparisons were applied. The comparison structure (A vs. B, A vs. C, A vs. D per model) was specified before data collection for Groups A–C; Group D was added post-hoc. All findings should be interpreted as exploratory pending pre-registration and replication.
 
 ## Controls and Potential Confounds
 
 **Problem difficulty:** all groups received the same 50 problems in the same order, eliminating difficulty as a between-group confound.
 
-**Bug type distribution:** HumanEvalPack's bug types (operator misuse, missing logic, variable misuse, excess logic, function misuse) are distributed approximately uniformly across the 50 problems. We report turns by bug type in Appendix A.
+**Bug type distribution:** HumanEvalPack's bug types (operator misuse, missing logic, variable misuse, excess logic, function misuse) are distributed approximately uniformly across the 50 problems. Turns by bug type are consistent across groups with no single type driving the group differences (see Turns by Bug Type subsection in Results).
 
 **Session isolation:** each trial was a fresh Claude Code session with no memory of prior trials. Rate limiting between calls was enforced with a fixed inter-trial delay (8s for Sonnet, 30s for Opus) to prevent API throttling from confounding timing measurements.
 

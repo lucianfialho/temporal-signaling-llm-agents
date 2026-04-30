@@ -14,7 +14,7 @@ The effect on tool-use turns diverged sharply across model tiers.
 |-------|-----------|---|-----------|-----|-----------|---|
 | A | Control | 100 | 7.10 | 1.35 | — | — |
 | B | Time + count + instruction | 100 | 7.02 | 1.64 | 0.52 ns | 0.05 |
-| C | Count only + minimal instruction | 100 | 6.49 | 1.37 | 0.003 ** | 0.45 |
+| C | Count + instruction | 100 | 6.49 | 1.37 | 0.003 ** | 0.45 |
 | D | Instruction only, no signal | 50 | 6.74 | 1.32 | 0.29 ns | 0.27 |
 
 *Table 1. Sonnet results. Groups A–C: n = 100/group, runs 1+2 pooled. Group D: n = 50, post-hoc instruction ablation.*

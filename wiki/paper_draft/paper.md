@@ -6,6 +6,20 @@ lucian@metricasboss.com.br
 
 ---
 
+# Abstract
+
+LLM agents in iterative loops have no built-in sense of how many attempts they have made. We ask whether injecting this information changes debugging efficiency — and whether the effect depends on model capability.
+
+We ran a controlled experiment on HumanEvalPack Python bugs using Claude Code as the agent, testing four conditions: no temporal signal (control, Group A), elapsed time + attempt count (Group B), attempt count alone (Group C), and instruction framing without any signal (Group D, ablation). We replicated across two model tiers: Sonnet (n=100/group, two independent runs) and Opus (n=50/group, one run).
+
+Solve rate was identical across all groups (~98–100%). For Sonnet, Group C used significantly fewer tool-use turns than control (p=0.003, Cohen d=0.45); Group D (instruction without signal) did not (p=0.29 ns), establishing the count signal as the causally active element. For Opus, Group B used significantly more turns than control (p=0.012, d=0.44), with Group C trending similarly (p=0.097).
+
+A chain-of-thought analysis (n=15/group) found that 93% of Group C sessions never verbalized the attempt count, yet produced 20% shorter reasoning text — consistent with implicit anchoring rather than explicit metareasoning.
+
+We conclude that attempt count is a low-cost signal with model-dependent effects: it induces efficiency in mid-tier models, apparently through anchoring, while frontier models show increased exploratory behavior under the full temporal signal (Group B). To our knowledge, this is the first controlled study isolating elapsed time vs. attempt count as agent planning signals, and the first to show that the effect direction depends on model capability.
+
+---
+
 # Introduction
 
 LLM-based agents deployed on iterative tasks — debugging, code generation, tool use — operate without any built-in sense of how long they have been working or how many attempts they have made. Each turn in the agent loop is processed with the same context as the first. This is not a fundamental limitation of the architecture, but a design choice: the harness simply does not inject this information.
@@ -14,9 +28,9 @@ The question we ask is whether it should. Temporal context is cheap to compute a
 
 We designed a controlled experiment around this question. Using Claude Code as the agent on HumanEvalPack Python debugging problems, we compared three groups: a control with no temporal signal, a treatment with elapsed time and attempt count, and an ablation with attempt count alone. We replicated across two model tiers — Sonnet and Opus — to test whether any effect is model-dependent.
 
-The results were unexpected. Solve rate was identical across all conditions. But the effect on tool-use turns diverged sharply by model: Sonnet became more efficient with attempt count, Opus became more exploratory with the full temporal signal. The same one-line prompt addition had opposite effects depending on model capability.
+The results were unexpected. Solve rate was identical across all conditions. But the effect on tool-use turns diverged sharply by model: Sonnet became more efficient with attempt count, Opus became more exploratory with the full temporal signal. The same prompt prefix produced opposite efficiency effects depending on model capability: for Sonnet, attempt count (Group C) reduced turns; for Opus, the full signal (Group B) increased turns. The conditions that reached significance differed by model tier.
 
-This paper makes three contributions: (1) the first controlled experiment isolating elapsed time vs. attempt count as agent context signals; (2) evidence that model capability moderates the direction of the effect; (3) a practical recommendation for agent system designers — inject attempt count, and calibrate expectations by model tier.
+This paper makes three contributions: (1) to our knowledge, the first controlled experiment isolating elapsed time vs. attempt count as agent context signals; (2) evidence that model capability moderates the direction of the effect; (3) a practical recommendation for agent system designers — inject attempt count, and calibrate expectations by model tier.
 
 ---
 
@@ -60,11 +74,11 @@ An open feature request in the hermes-agent harness (NousResearch, 2025) propose
 
 LiteLLM implements iteration budgets as a hard server-side cap (HTTP 429 after N calls) rather than a context injection — a gating mechanism, not a planning signal.
 
-These implementations collectively demonstrate that the practitioner community has identified the need for attempt-aware agents. Our experiment is the first to study this systematically: isolating the causal effect of attempt count injection, comparing it against elapsed time, measuring the outcome on a controlled benchmark, and testing whether the effect generalizes across model tiers.
+These implementations collectively demonstrate that the practitioner community has identified the need for attempt-aware agents. To our knowledge, our experiment is the first to study this systematically: isolating the causal effect of attempt count injection, comparing it against elapsed time, measuring the outcome on a controlled benchmark, and testing whether the effect generalizes across model tiers.
 
 ## Gap Addressed by This Work
 
-None of the prior work directly manipulates temporal signals as independent variables in a tool-using agent setting with a pass/fail oracle. Self-Refine does not track elapsed time or attempt count as a context variable. CoALA identifies metareasoning as a gap but offers no empirical test. The temporal reasoning and memory papers study retrieval quality and comprehension, not downstream agent behavior in an action loop. TALE establishes that budget signals affect single-call reasoning, but does not study agentic loops, tool use, temporal signals, or cross-model effects. TraceCoder and hermes-agent confirm practitioner demand but provide no controlled measurements. Our experiment is the first to isolate elapsed time vs. attempt count in a controlled, agentic debugging task — and the first to show that the effect direction depends on model capability.
+None of the prior work directly manipulates temporal signals as independent variables in a tool-using agent setting with a pass/fail oracle. Self-Refine does not track elapsed time or attempt count as a context variable. CoALA identifies metareasoning as a gap but offers no empirical test. The temporal reasoning and memory papers study retrieval quality and comprehension, not downstream agent behavior in an action loop. TALE establishes that budget signals affect single-call reasoning, but does not study agentic loops, tool use, temporal signals, or cross-model effects. TraceCoder and hermes-agent confirm practitioner demand but provide no controlled measurements. To our knowledge, our experiment is the first to isolate elapsed time vs. attempt count in a controlled, agentic debugging task — and the first to show that the effect direction depends on model capability.
 
 ---
 
@@ -97,10 +111,32 @@ Groups differed only in what preceded this prompt:
 
 - **Group A (control):** no prefix — the task prompt above, verbatim.
 - **Group B (time + attempt):** prefix `[session_elapsed: {Xs} | attempt: 1/5]` plus a system prompt addition instructing the agent to use elapsed time to adapt its strategy if stuck.
-- **Group C (attempt only):** prefix `[attempt: 1/5]` with no system prompt addition and no elapsed time.
+- **Group C (attempt only):** prefix `[attempt: 1/5]` plus a system prompt addition instructing the agent to try a different approach if previous attempts failed. No elapsed time.
 - **Group D (instruction only, post-hoc):** no prefix and no temporal signal, but the same system prompt addition as Group B: *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach."* Group D was added after the initial draft to address the instruction confound in Group B: if the Group C effect were driven by the instruction framing rather than the count signal, Group D should replicate it. Group D was run on Sonnet only (n=50).
 
 The elapsed time in Group B was measured from session initialization to the moment the prompt was issued (typically 0–2 seconds for the first attempt, as each trial was a fresh session). The denominator `5` was fixed across all trials.
+
+## Exact Prompts
+
+**Group A** — no system prompt addition. Task prompt only (see above).
+
+**Group B system prompt:**
+> "You are a debugging assistant. As you work, you will be told how much time has elapsed and how many attempts you've made. Use this information to adapt your debugging strategy — if you've been working a long time without success, try a fundamentally different approach."
+
+**Group C system prompt:**
+> "You are a debugging assistant. You will be told how many attempts you've made. If previous attempts failed, try a different approach."
+
+**Group D system prompt:**
+> "You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach."
+
+**Task prompt (all groups):**
+> "The function `[entry_point]` in `[path]/solution.py` has a bug. Run `python test_runner.py` to see the test results. Fix the bug in `solution.py` so all tests pass. When done, run the tests one final time to confirm."
+
+**Prompt prefix by group:**
+- Group A: no prefix
+- Group B: `[session_elapsed: {X}s | attempt: 1/5]`
+- Group C: `[attempt: 1/5]`
+- Group D: no prefix
 
 Each trial was run as a single Claude Code session. The agent was not interrupted; it ran until it either confirmed all tests passed or exhausted its internal reasoning budget.
 
@@ -112,13 +148,13 @@ Each trial was run as a single Claude Code session. The agent was not interrupte
 
 ## Statistical Analysis
 
-Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-use turn distributions were tested with the Mann-Whitney U test (two-tailed), which makes no distributional assumptions. Effect sizes are reported as Cohen's d for turns and odds ratio for solve rate. The significance threshold is α = 0.05. No corrections for multiple comparisons were applied given the pre-registered comparison structure (A vs. B, A vs. C, B vs. C per model).
+Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-use turn distributions were tested with the Mann-Whitney U test (two-tailed), which makes no distributional assumptions. Effect sizes are reported as Cohen's d for turns and odds ratio for solve rate. The significance threshold is α = 0.05. No corrections for multiple comparisons were applied. The comparison structure (A vs. B, A vs. C, A vs. D per model) was specified before data collection for Groups A–C; Group D was added post-hoc. All findings should be interpreted as exploratory pending pre-registration and replication.
 
 ## Controls and Potential Confounds
 
 **Problem difficulty:** all groups received the same 50 problems in the same order, eliminating difficulty as a between-group confound.
 
-**Bug type distribution:** HumanEvalPack's bug types (operator misuse, missing logic, variable misuse, excess logic, function misuse) are distributed approximately uniformly across the 50 problems. We report turns by bug type in Appendix A.
+**Bug type distribution:** HumanEvalPack's bug types (operator misuse, missing logic, variable misuse, excess logic, function misuse) are distributed approximately uniformly across the 50 problems. Turns by bug type are consistent across groups with no single type driving the group differences (see Turns by Bug Type subsection in Results).
 
 **Session isolation:** each trial was a fresh Claude Code session with no memory of prior trials. Rate limiting between calls was enforced with a fixed inter-trial delay (8s for Sonnet, 30s for Opus) to prevent API throttling from confounding timing measurements.
 
@@ -144,7 +180,7 @@ The effect on tool-use turns diverged sharply across model tiers.
 |-------|-----------|---|-----------|-----|-----------|---|
 | A | Control | 100 | 7.10 | 1.35 | — | — |
 | B | Time + count + instruction | 100 | 7.02 | 1.64 | 0.52 ns | 0.05 |
-| C | Count only + minimal instruction | 100 | 6.49 | 1.37 | 0.003 ** | 0.45 |
+| C | Count + instruction | 100 | 6.49 | 1.37 | 0.003 ** | 0.45 |
 | D | Instruction only, no signal | 50 | 6.74 | 1.32 | 0.29 ns | 0.27 |
 
 *Table 1. Sonnet results. Groups A–C: n = 100/group, runs 1+2 pooled. Group D: n = 50, post-hoc instruction ablation.*
@@ -209,7 +245,7 @@ This is consistent with the temporal reasoning literature. LoCoMo (Maharana et a
 
 ## Why Opus Responds Differently
 
-The reversal in Opus — where temporal signals *increase* tool-use turns — suggests a different mechanism. Opus, as a more capable model, may treat the attempt-count or time signal not as a resource constraint but as an invitation to be more thorough. Where Sonnet reads "attempt 1/5" as *commit sooner*, Opus may read it as *you have 4 more tries if this one fails, so explore now*.
+The reversal in Opus — where temporal signals *increase* tool-use turns — suggests a different mechanism. To be precise about what "reversal" means here: it is Group C (count only) that reaches significance for Sonnet (p=0.003), while it is Group B (elapsed time + count) that reaches significance for Opus (p=0.012). These are not the identical signal reversing direction — different conditions reached significance in each model tier, with Group C trending in the same direction as Group B for Opus (p=0.097) but not reaching significance with n=50. Opus, as a more capable model, may treat the attempt-count or time signal not as a resource constraint but as an invitation to be more thorough. Where Sonnet reads "attempt 1/5" as *commit sooner*, Opus may read it as *you have 4 more tries if this one fails, so explore now*.
 
 This is a form of the explore-exploit tradeoff applied to debugging. A more capable model with a higher baseline confidence in its reasoning may rationally allocate more turns to exploration when it knows retries are available — the opposite of what a less confident model does. The result is more turns per trial, but with identical solve rate, suggesting the extra turns are spent on verification and hypothesis enumeration rather than on finding the fix itself.
 
@@ -219,7 +255,7 @@ This interpretation is speculative; we cannot observe the agent's internal reaso
 
 To probe whether Group C's efficiency gain reflects explicit use of the count signal or implicit anchoring, we captured the full visible reasoning text from 15 sessions per group (A, C, D) using Claude Code's stream-JSON output. We coded each session for explicit mentions of the attempt signal (words matching: "attempt", "tries", "remaining", "N of M") and for strategy-change language ("different approach", "alternatively", "try instead").
 
-In 14 of 15 Group C sessions (93%), the model never verbalized the attempt count. Reasoning text length was 20% shorter in Group C than control (602 vs. 754 characters on average), and strategy-change language was less frequent (0.33 vs. 0.60 instances per session). Group D (instruction only) fell between the two: reasoning length 684 characters, strategy mentions 0.47 per session — more compressed than control but less so than Group C.
+In 14 of 15 Group C sessions (93%), the model never verbalized the attempt count. For comparison, Group A (control, no signal) showed 0% signal verbalization — as expected, since no signal was provided. Group D (instruction only) also showed 0% verbalization. The meaningful comparison is reasoning length and strategy-word frequency, where the gradient A (754 chars, 0.60 strategy words) > D (684 chars, 0.47) > C (602 chars, 0.33) holds consistently. Reasoning text length was 20% shorter in Group C than control (602 vs. 754 characters on average), and strategy-change language was less frequent (0.33 vs. 0.60 instances per session). Group D (instruction only) fell between the two: reasoning length 684 characters, strategy mentions 0.47 per session — more compressed than control but less so than Group C.
 
 The gradient A > D > C on both reasoning length and strategy mentions mirrors the turn-count gradient, and holds without any explicit verbalization of the signal. This pattern is consistent with **anchoring rather than explicit metareasoning**: the `[attempt: 1/5]` token appears to compress the model's planning horizon implicitly, without the model consciously thinking "I have four more tries." The instruction in Group D achieves a partial compression effect, but the structured count signal in Group C achieves a larger one — without any explicit deliberation about the constraint.
 
@@ -231,7 +267,7 @@ Three recommendations follow from these results for practitioners building LLM a
 
 **1. Inject attempt count, not elapsed time.** Attempt count is a three-token addition to the prompt (`[attempt: N/M]`) with no computational cost. For mid-tier models, it reduces tool-use turns — and by extension, API costs and latency — without affecting task success. Elapsed time provides no benefit and may introduce noise.
 
-**2. Calibrate by model tier.** The effect direction reverses between Sonnet and Opus. A system prompt optimized for efficiency with Sonnet may increase turn count with Opus. Agent harness designers should treat temporal signal configuration as a model-specific hyperparameter, not a universal default.
+**2. Calibrate by model tier.** The effect direction reverses between Sonnet and Opus. For Sonnet, count signals reduce turns (p=0.003). For Opus, the full signal (Group B) increases turns (p=0.012), while count-only (Group C) trends similarly but does not reach significance with n=50. A system prompt optimized for efficiency with Sonnet may increase turn count with Opus. Validate per-model before deployment. Agent harness designers should treat temporal signal configuration as a model-specific hyperparameter, not a universal default.
 
 **3. Solve rate is not the right metric for efficiency studies.** All conditions converged to the same solve rate, but tool-use turns varied by up to 10% between groups. Cost and latency optimization in deployed agents requires measuring turns or token counts directly, not just pass/fail outcomes.
 
@@ -241,9 +277,11 @@ Three recommendations follow from these results for practitioners building LLM a
 
 **Single provider.** Both models tested are from the same provider (Anthropic). The effect may not generalize to GPT-4o, Gemini, or open-source models such as Llama 3 or Mistral. The capability-moderation finding — that the effect direction reverses between model tiers — requires replication with models from different providers and training pipelines before it can be claimed as a general principle.
 
-**Unequal sample sizes.** Sonnet was tested with n=100 per group across two independent runs; Opus with n=50 in a single run. The Opus results are less statistically powered, and the Group C trend (p=0.097) falls below the significance threshold. A fully powered Opus replication would require approximately 100 trials per group to match Sonnet's precision.
+**Unequal sample sizes.** Sonnet was tested with n=100 per group across two independent runs; Opus with n=50 in a single run. The Opus results are less statistically powered, and the Group C trend (p=0.097) falls below the significance threshold. A fully powered Opus replication would require approximately 100 trials per group to match Sonnet's precision. The most prominent finding — that temporal signals increase turns for Opus while decreasing them for Sonnet — rests on a single run with n=50 for Opus. This is the least statistically robust result in the paper, and the direction reversal should be treated as preliminary until replicated with n=100 across two independent runs.
 
 **Instruction–signal interaction.** The post-hoc Group D ablation (Sonnet, n = 50) confirms that the instruction framing alone does not replicate the Group C reduction (p = 0.29 ns, d = 0.27), establishing the count signal as the necessary active ingredient. However, Group D's mean (6.74 turns) falls between the control (7.10) and Group C (6.49), leaving open the possibility that the instruction contributes a partial, non-significant nudge that amplifies the count signal's effect in Group C. In other words, the instruction may prime the model to treat `[attempt: 1/5]` as a meaningful resource boundary rather than decorative text — making the full Group C condition more than the sum of its parts. This interaction is not yet decomposed at the level of mechanistic evidence; it remains a plausible account consistent with the observed effect sizes.
+
+**Fixed denominator and static numerator.** The prefix `[attempt: 1/5]` is identical across all trials: the numerator is always 1 (each trial is a fresh session) and the denominator 5 was set arbitrarily. We cannot distinguish whether the effect is driven by the ordinal signal ("this is attempt 1, implying more are available"), the total budget implied by the denominator ("there are 5 attempts"), or the N/M structure itself. Future work should vary the denominator and, in multi-turn sessions, advance the numerator across retries to test whether the signal gains potency as attempts accumulate.
 
 **Benchmark scope.** HumanEvalPack bugs are synthetic, small (typically 5–30 lines), and drawn from a well-known dataset likely present in the models' training data. Real-world debugging tasks involve larger codebases, ambiguous specifications, and bugs that require multi-file reasoning. Whether the attempt-count effect scales to harder, longer tasks is unknown.
 
@@ -253,7 +291,7 @@ Three recommendations follow from these results for practitioners building LLM a
 
 # Conclusion
 
-We asked whether injecting temporal signals into an LLM agent's context changes debugging efficiency, and whether the answer depends on model capability. The results are clear on both counts. Solve rate is unaffected by any temporal signal across both model tiers. Tool-use efficiency, however, diverges sharply: attempt count alone reduces turns for Sonnet (p=0.003, d=0.45) and increases turns for Opus (p=0.012, d=0.44), with elapsed time adding no benefit and likely introducing noise in either case.
+We asked whether injecting temporal signals into an LLM agent's context changes debugging efficiency, and whether the answer depends on model capability. The results are clear on both counts. Solve rate is unaffected by any temporal signal across both model tiers. Tool-use efficiency, however, diverges sharply: count-only signal (Group C) reduces turns for Sonnet (p=0.003, d=0.45); the full temporal signal (Group B: elapsed time + count) increases turns for Opus (p=0.012, d=0.44), with Group C trending similarly for Opus but not reaching significance (p=0.097). Elapsed time adds no benefit for Sonnet and may introduce noise.
 
 The practical takeaway is simple. Inject attempt count — not elapsed time — into your agent's prompt. It is a three-token addition with no computational cost. Expect efficiency gains for mid-tier models and more exploratory behavior for frontier models. Treat it as a model-specific hyperparameter, not a universal default. And measure tool-use turns, not just solve rate, when evaluating agent efficiency. The gap between what agents accomplish and how efficiently they accomplish it is where the cost of deployment lives.
 
