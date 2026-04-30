@@ -28,7 +28,7 @@ Groups differed only in what preceded this prompt:
 - **Group A (control):** no prefix — the task prompt above, verbatim.
 - **Group B (time + attempt):** prefix `[session_elapsed: {Xs} | attempt: 1/5]` plus a system prompt addition instructing the agent to use elapsed time to adapt its strategy if stuck.
 - **Group C (attempt only):** prefix `[attempt: 1/5]` plus a system prompt addition instructing the agent to try a different approach if previous attempts failed. No elapsed time.
-- **Group D (instruction only, post-hoc):** no prefix and no temporal signal, but the same system prompt addition as Group B: *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach."* Group D was added after the initial draft to address the instruction confound in Group B: if the Group C effect were driven by the instruction framing rather than the count signal, Group D should replicate it. Group D was run on Sonnet only (n=50).
+- **Group D (instruction only, post-hoc):** no prefix and no temporal signal, with a distinct system prompt: *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach."* Note that this instruction differs from Group B (which mentions temporal signals explicitly) and from Group C (which primes the model to expect attempt count). Group D tests whether any instruction framing — without any temporal signal — produces the Group C efficiency gain. Group D was run on Sonnet only (n=50).
 
 The elapsed time in Group B was measured from session initialization to the moment the prompt was issued (typically 0–2 seconds for the first attempt, as each trial was a fresh session). The denominator `5` was fixed across all trials.
 

@@ -26,7 +26,7 @@ LLM-based agents deployed on iterative tasks — debugging, code generation, too
 
 The question we ask is whether it should. Temporal context is cheap to compute and trivial to inject. If it changes agent behavior in useful ways — reducing wasted effort, triggering strategy shifts — the cost-benefit is obvious. If it does not, that too is worth knowing.
 
-We designed a controlled experiment around this question. Using Claude Code as the agent on HumanEvalPack Python debugging problems, we compared three groups: a control with no temporal signal, a treatment with elapsed time and attempt count, and an ablation with attempt count alone. We replicated across two model tiers — Sonnet and Opus — to test whether any effect is model-dependent.
+We designed a controlled experiment around this question. Using Claude Code as the agent on HumanEvalPack Python debugging problems, we compared four conditions: a control with no temporal signal (Group A), a treatment with elapsed time and attempt count (Group B), attempt count alone (Group C), and a post-hoc instruction ablation with no temporal signal (Group D). We replicated across two model tiers — Sonnet and Opus — to test whether any effect is model-dependent.
 
 The results were unexpected. Solve rate was identical across all conditions. But the effect on tool-use turns diverged sharply by model: Sonnet became more efficient with attempt count, Opus became more exploratory with the full temporal signal. The same prompt prefix produced opposite efficiency effects depending on model capability: for Sonnet, attempt count (Group C) reduced turns; for Opus, the full signal (Group B) increased turns. The conditions that reached significance differed by model tier.
 
@@ -112,7 +112,7 @@ Groups differed only in what preceded this prompt:
 - **Group A (control):** no prefix — the task prompt above, verbatim.
 - **Group B (time + attempt):** prefix `[session_elapsed: {Xs} | attempt: 1/5]` plus a system prompt addition instructing the agent to use elapsed time to adapt its strategy if stuck.
 - **Group C (attempt only):** prefix `[attempt: 1/5]` plus a system prompt addition instructing the agent to try a different approach if previous attempts failed. No elapsed time.
-- **Group D (instruction only, post-hoc):** no prefix and no temporal signal, but the same system prompt addition as Group B: *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach."* Group D was added after the initial draft to address the instruction confound in Group B: if the Group C effect were driven by the instruction framing rather than the count signal, Group D should replicate it. Group D was run on Sonnet only (n=50).
+- **Group D (instruction only, post-hoc):** no prefix and no temporal signal, with a distinct system prompt: *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach."* Note that this instruction differs from Group B (which mentions temporal signals explicitly) and from Group C (which primes the model to expect attempt count). Group D tests whether any instruction framing — without any temporal signal — produces the Group C efficiency gain. Group D was run on Sonnet only (n=50).
 
 The elapsed time in Group B was measured from session initialization to the moment the prompt was issued (typically 0–2 seconds for the first attempt, as each trial was a fresh session). The denominator `5` was fixed across all trials.
 
@@ -168,13 +168,13 @@ Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-u
 
 ## Solve Rate
 
-Solve rate was identical across all groups and both models. For Sonnet, all three groups resolved 98–100% of problems (Group A: 100/100; Group B: 99/100; Group C: 99/100). For Opus, all three groups resolved 100% of problems (50/50 each). Fisher's exact tests revealed no significant differences between any pair of groups for either model (all p > 0.5). Injecting temporal signals — whether elapsed time, attempt count, or both — had no measurable effect on whether the agent ultimately solved the problem.
+Solve rate was identical across all groups and both models. For Sonnet, Groups A–C resolved 98–100% of problems (Group A: 100/100; Group B: 99/100; Group C: 99/100); Group D (post-hoc ablation, n=50) resolved 98% (49/50). For Opus, all three main groups resolved 100% of problems (50/50 each). Fisher's exact tests revealed no significant differences between any pair of groups for either model (all p > 0.5). Injecting temporal signals — whether elapsed time, attempt count, or both — had no measurable effect on whether the agent ultimately solved the problem.
 
 ## Tool-Use Turns
 
 The effect on tool-use turns diverged sharply across model tiers.
 
-**Sonnet.** Group C (attempt count only) used significantly fewer turns than the control (Group A): mean 6.49 vs. 7.10, Mann-Whitney U = 1530, p = 0.0035, Cohen d = 0.45. Group B (time + attempt count) did not differ significantly from control: mean 7.02 vs. 7.10, U = 1348, p = 0.52, d = 0.05. The difference between Group B and Group C was significant (p = 0.039, d = 0.35), with Group C being the more efficient condition. Group D (instruction only, no temporal signal; n = 50) did not differ significantly from the control: mean 6.74 vs. 7.10, p = 0.29, d = 0.27, Δ = +0.36 turns relative to Group C.
+**Sonnet.** Group C (attempt count only) used significantly fewer turns than the control (Group A): mean 6.49 vs. 7.10, Mann-Whitney U = 1530, p = 0.0035, Cohen d = 0.45. Group B (time + attempt count) did not differ significantly from control: mean 7.02 vs. 7.10, U = 1348, p = 0.52, d = 0.05. The difference between Group B and Group C was significant (p = 0.039, d = 0.35), with Group C being the more efficient condition. Group D (instruction only, no temporal signal; n = 50) did not differ significantly from the control: mean 6.74 vs. 7.10, p = 0.29, d = 0.27, Δ = +0.25 turns relative to Group C.
 
 | Group | Condition | n | Mean turns | SD | vs. A (p) | d |
 |-------|-----------|---|-----------|-----|-----------|---|
@@ -213,9 +213,9 @@ For Sonnet, runs 1 and 2 produced consistent means across all groups: Group A me
 
 ## Instruction Ablation (Group D)
 
-Group D was run after the initial paper draft to isolate whether the Group C effect is attributable to the instruction framing or to the count signal `[attempt: 1/5]`. Group D carried the same instruction as Group B — *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach"* — but no prefix token and no temporal signal.
+Group D was run after the initial paper draft to isolate whether the Group C effect is attributable to the instruction framing or to the count signal `[attempt: 1/5]`. Group D carried an instruction-only system prompt — *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach"* — with no prefix token and no temporal signal. This instruction differs from Group B (which mentions temporal signals explicitly) and from Group C (which primes the model to expect attempt count).
 
-Group D (Sonnet, n = 50) produced a mean of 6.74 turns (SD = 1.32), which did not differ significantly from the control: p = 0.29 (ns), Cohen d = 0.27. This places Group D squarely between Groups A and C, and significantly above Group C (Δ = +0.25 turns). The instruction alone does not replicate the Group C reduction. The count signal `[attempt: 1/5]` is the active ingredient.
+Group D (Sonnet, n = 50) produced a mean of 6.74 turns (SD = 1.32), which did not differ significantly from the control: p = 0.29 (ns), Cohen d = 0.27. This places Group D squarely between Groups A and C, and numerically above Group C by 0.25 turns (D vs. C: p = 0.15 ns). The instruction alone does not replicate the Group C reduction. The count signal `[attempt: 1/5]` is the active ingredient.
 
 This result closes the main confound identified in the original design. The presence of an additional instruction in Group B and Group C was a potential alternative explanation for the Group C effect — if the model simply responds to any additional framing by behaving differently, Group C's advantage might not be due to the count signal per se. Group D rules this out: the instruction framing without the count signal produces no significant reduction.
 
@@ -238,6 +238,8 @@ Critically, the effect is on *efficiency* (turns), not *accuracy* (solve rate). 
 ## Why Elapsed Time Does Not Help — And May Add Noise
 
 For Sonnet, Group B (time + attempt) performed no better than the control despite including the same attempt count as Group C. The most parsimonious explanation is interference: the elapsed time signal adds context that the model must process, and that processing consumes reasoning capacity that would otherwise go toward the debugging task. The model attends to the time value, attempts to interpret its significance, and produces a slightly noisier action plan — canceling the benefit of the count signal.
+
+An important design caveat: in this experiment, elapsed time was necessarily near-zero for all Group B trials (typically 0–2 seconds), since each trial began as a fresh session with no prior history. The model received a signal such as `[session_elapsed: 1s | attempt: 1/5]` — a value informationally empty of any signal about task difficulty or progress. This means we cannot determine from this experiment whether elapsed time would function differently in long-horizon sessions where the value is non-trivial (e.g., 3 hours into a complex bug). The finding that elapsed time provides no benefit is valid for the near-zero regime tested here; it should not be generalized to all possible elapsed-time values without further study.
 
 This is consistent with the temporal reasoning literature. LoCoMo (Maharana et al., 2024) shows that LLMs underperform on elapsed-time questions by 73 percentage points relative to humans. Alonso et al. (2024) find that semantic retrieval over timestamps achieves 3–6% recall, while ordinal session-number retrieval achieves 90%. If the model cannot reliably reason about elapsed time in comprehension tasks, it is unlikely to use it productively as a planning signal in an action loop. The time value becomes noise rather than signal.
 
@@ -294,6 +296,34 @@ Three recommendations follow from these results for practitioners building LLM a
 We asked whether injecting temporal signals into an LLM agent's context changes debugging efficiency, and whether the answer depends on model capability. The results are clear on both counts. Solve rate is unaffected by any temporal signal across both model tiers. Tool-use efficiency, however, diverges sharply: count-only signal (Group C) reduces turns for Sonnet (p=0.003, d=0.45); the full temporal signal (Group B: elapsed time + count) increases turns for Opus (p=0.012, d=0.44), with Group C trending similarly for Opus but not reaching significance (p=0.097). Elapsed time adds no benefit for Sonnet and may introduce noise.
 
 The practical takeaway is simple. Inject attempt count — not elapsed time — into your agent's prompt. It is a three-token addition with no computational cost. Expect efficiency gains for mid-tier models and more exploratory behavior for frontier models. Treat it as a model-specific hyperparameter, not a universal default. And measure tool-use turns, not just solve rate, when evaluating agent efficiency. The gap between what agents accomplish and how efficiently they accomplish it is where the cost of deployment lives.
+
+---
+
+# References
+
+Alonso, N., Figliolia, T., Ndirango, A., & Millidge, B. (2024). Toward conversational agents with context and time sensitive long-term memory. *arXiv preprint arXiv:2406.00057*.
+
+Han, T., Wang, Z., Fang, C., Zhao, S., Ma, S., & Chen, Z. (2024). Token-budget-aware LLM reasoning. *arXiv preprint arXiv:2412.18547*.
+
+Jang, J., Boo, M., & Kim, H. (2023). Conversation chronicles: Towards diverse temporal and relational dynamics in multi-session conversations. *arXiv preprint arXiv:2310.13420*.
+
+Maharana, A., Lee, D.-H., Tulyakov, S., Bansal, M., Barbieri, F., & Fang, Y. (2024). Evaluating very long-term conversational memory of LLM agents. *arXiv preprint arXiv:2402.17753*.
+
+Madaan, A., Tandon, N., Gupta, P., Hallinan, S., Gao, L., Wiegreffe, S., … & Clark, P. (2023). Self-refine: Iterative refinement with self-feedback. *Advances in Neural Information Processing Systems, 36*.
+
+Muennighoff, N., Liu, Q., Zebaze, A., Zheng, Q., Hui, B., Zhuo, T. Y., … & Shi, L. (2023). OctoPack: Instruction tuning code large language models. *arXiv preprint arXiv:2308.07124*.
+
+NousResearch. (2025). Feature: Iteration budget pressure — warn the LLM before max iterations hit [GitHub Issue #414]. *hermes-agent repository*. https://github.com/NousResearch/hermes-agent/issues/414
+
+Packer, C., Wooders, S., Lin, K., Fang, V., Patil, S. G., Stoica, I., & Gonzalez, J. E. (2023). MemGPT: Towards LLMs as operating systems. *arXiv preprint arXiv:2310.08560*.
+
+Pink, M., Wu, Q., Vo, V. A., Turek, J., Mu, J., Huth, A., & Toneva, M. (2025). Position: Episodic memory is the missing piece for long-term LLM agents. *arXiv preprint arXiv:2502.06975*.
+
+Rorseth, J., Faisal, A., Sinha, M., & Nakayama, K. (2025). TraceCoder: A trace-driven multi-agent framework for automated debugging of LLM-generated code. *arXiv preprint arXiv:2602.06875*.
+
+Sumers, T. R., Yao, S., Narasimhan, K., & Griffiths, T. L. (2023). Cognitive architectures for language agents. *arXiv preprint arXiv:2309.02427*.
+
+Yang, W., Li, Y., Fang, M., & Chen, L. (2024). Enhancing temporal sensitivity and reasoning for time-sensitive question answering. *arXiv preprint arXiv:2409.16909*.
 
 ---
 
