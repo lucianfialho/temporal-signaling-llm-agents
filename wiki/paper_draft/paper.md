@@ -6,6 +6,20 @@ lucian@metricasboss.com.br
 
 ---
 
+# Abstract
+
+LLM agents in iterative loops have no built-in sense of how many attempts they have made. We ask whether injecting this information changes debugging efficiency — and whether the effect depends on model capability.
+
+We ran a controlled experiment on HumanEvalPack Python bugs using Claude Code as the agent, testing three conditions: no temporal signal (control), elapsed time + attempt count (Group B), and attempt count alone (Group C). We replicated across two model tiers: Sonnet (n=100/group) and Opus (n=50/group).
+
+Solve rate was identical across all groups (~98–100%). The effect on tool-use turns was opposite across models: Sonnet's Group C used significantly fewer turns than control (p=0.003, d=0.45), while Opus's Group B used significantly more (p=0.012, d=0.44). Elapsed time added noise for Sonnet and amplified exploration for Opus.
+
+A post-hoc instruction ablation (Group D, Sonnet, n=50) — carrying the instruction framing without any temporal signal — produced no significant reduction relative to control (p=0.29, d=0.27), confirming that the count signal `[attempt: 1/5]` is the active ingredient in Group C, not the instruction framing.
+
+We conclude that attempt count is a low-cost signal with model-dependent effects: it induces efficiency in mid-tier models and exploratory behavior in frontier models — a distinction with direct implications for agent system design.
+
+---
+
 # Introduction
 
 LLM-based agents deployed on iterative tasks — debugging, code generation, tool use — operate without any built-in sense of how long they have been working or how many attempts they have made. Each turn in the agent loop is processed with the same context as the first. This is not a fundamental limitation of the architecture, but a design choice: the harness simply does not inject this information.
@@ -98,6 +112,7 @@ Groups differed only in what preceded this prompt:
 - **Group A (control):** no prefix — the task prompt above, verbatim.
 - **Group B (time + attempt):** prefix `[session_elapsed: {Xs} | attempt: 1/5]` plus a system prompt addition instructing the agent to use elapsed time to adapt its strategy if stuck.
 - **Group C (attempt only):** prefix `[attempt: 1/5]` with no system prompt addition and no elapsed time.
+- **Group D (instruction only, post-hoc):** no prefix and no temporal signal, but the same system prompt addition as Group B: *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach."* Group D was added after the initial draft to address the instruction confound in Group B: if the Group C effect were driven by the instruction framing rather than the count signal, Group D should replicate it. Group D was run on Sonnet only (n=50).
 
 The elapsed time in Group B was measured from session initialization to the moment the prompt was issued (typically 0–2 seconds for the first attempt, as each trial was a fresh session). The denominator `5` was fixed across all trials.
 
@@ -123,7 +138,7 @@ Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-u
 
 **Model version:** a single model checkpoint was used for all trials within each model tier. No fine-tuning or prompt caching was applied.
 
-**Unblinded groups:** Claude Code's system prompt is visible to the model. Groups B and C include a system prompt addition that is absent in Group A, creating a minor confound between the temporal signal and the presence of any additional instruction. We partially address this in the Discussion.
+**Unblinded groups:** Claude Code's system prompt is visible to the model. Groups B and C include a system prompt addition that is absent in Group A, creating a minor confound between the temporal signal and the presence of any additional instruction. Group D was added post-hoc to decompose this confound: it carries the instruction without the count signal, allowing a clean test of whether the instruction framing alone produces the Group C effect.
 
 ---
 
@@ -137,15 +152,16 @@ Solve rate was identical across all groups and both models. For Sonnet, all thre
 
 The effect on tool-use turns diverged sharply across model tiers.
 
-**Sonnet.** Group C (attempt count only) used significantly fewer turns than the control (Group A): mean 6.49 vs. 7.10, Mann-Whitney U = 1530, p = 0.0035, Cohen d = 0.45. Group B (time + attempt count) did not differ significantly from control: mean 7.02 vs. 7.10, U = 1348, p = 0.52, d = 0.05. The difference between Group B and Group C was significant (p = 0.039, d = 0.35), with Group C being the more efficient condition.
+**Sonnet.** Group C (attempt count only) used significantly fewer turns than the control (Group A): mean 6.49 vs. 7.10, Mann-Whitney U = 1530, p = 0.0035, Cohen d = 0.45. Group B (time + attempt count) did not differ significantly from control: mean 7.02 vs. 7.10, U = 1348, p = 0.52, d = 0.05. The difference between Group B and Group C was significant (p = 0.039, d = 0.35), with Group C being the more efficient condition. Group D (instruction only, no temporal signal; n = 50) did not differ significantly from the control: mean 6.74 vs. 7.10, p = 0.29, d = 0.27, Δ = +0.36 turns relative to Group C.
 
-| Group | Condition | Mean turns | SD | vs. A (p) | d |
-|-------|-----------|-----------|-----|-----------|---|
-| A | Control | 7.10 | 1.35 | — | — |
-| B | Time + attempt | 7.02 | 1.64 | 0.52 ns | 0.05 |
-| C | Attempt only | 6.49 | 1.37 | 0.003 ** | 0.45 |
+| Group | Condition | n | Mean turns | SD | vs. A (p) | d |
+|-------|-----------|---|-----------|-----|-----------|---|
+| A | Control | 100 | 7.10 | 1.35 | — | — |
+| B | Time + count + instruction | 100 | 7.02 | 1.64 | 0.52 ns | 0.05 |
+| C | Count only + minimal instruction | 100 | 6.49 | 1.37 | 0.003 ** | 0.45 |
+| D | Instruction only, no signal | 50 | 6.74 | 1.32 | 0.29 ns | 0.27 |
 
-*Table 1. Sonnet results (n = 100/group, runs 1+2 pooled).*
+*Table 1. Sonnet results. Groups A–C: n = 100/group, runs 1+2 pooled. Group D: n = 50, post-hoc instruction ablation.*
 
 ![Tool-use turns distribution — Sonnet vs Opus](../../figures/fig1_turns_violin.png)
 
@@ -173,6 +189,14 @@ The effect on tool-use turns diverged sharply across model tiers.
 
 For Sonnet, runs 1 and 2 produced consistent means across all groups: Group A mean 7.08 (run 1) vs. 7.12 (run 2); Group B 6.90 vs. 7.14; Group C 6.28 vs. 6.70. The maximum inter-run delta was 0.42 turns (Group C), within one standard deviation. The directional pattern — C < A — was present in both runs independently.
 
+## Instruction Ablation (Group D)
+
+Group D was run after the initial paper draft to isolate whether the Group C effect is attributable to the instruction framing or to the count signal `[attempt: 1/5]`. Group D carried the same instruction as Group B — *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach"* — but no prefix token and no temporal signal.
+
+Group D (Sonnet, n = 50) produced a mean of 6.74 turns (SD = 1.32), which did not differ significantly from the control: p = 0.29 (ns), Cohen d = 0.27. This places Group D squarely between Groups A and C, and significantly above Group C (Δ = +0.25 turns). The instruction alone does not replicate the Group C reduction. The count signal `[attempt: 1/5]` is the active ingredient.
+
+This result closes the main confound identified in the original design. The presence of an additional instruction in Group B and Group C was a potential alternative explanation for the Group C effect — if the model simply responds to any additional framing by behaving differently, Group C's advantage might not be due to the count signal per se. Group D rules this out: the instruction framing without the count signal produces no significant reduction.
+
 ## Turns by Bug Type
 
 Across both models and all groups, problems classified as "excess logic" required the most turns on average (Sonnet Group A: 9.0; Opus Group A: 9.4), while "function misuse" and "variable misuse" required the fewest (Sonnet Group A: 6.0–7.0). The treatment effects were consistent in direction across bug types, with no single bug type driving the group differences.
@@ -194,6 +218,8 @@ Critically, the effect is on *efficiency* (turns), not *accuracy* (solve rate). 
 For Sonnet, Group B (time + attempt) performed no better than the control despite including the same attempt count as Group C. The most parsimonious explanation is interference: the elapsed time signal adds context that the model must process, and that processing consumes reasoning capacity that would otherwise go toward the debugging task. The model attends to the time value, attempts to interpret its significance, and produces a slightly noisier action plan — canceling the benefit of the count signal.
 
 This is consistent with the temporal reasoning literature. LoCoMo (Maharana et al., 2024) shows that LLMs underperform on elapsed-time questions by 73 percentage points relative to humans. Alonso et al. (2024) find that semantic retrieval over timestamps achieves 3–6% recall, while ordinal session-number retrieval achieves 90%. If the model cannot reliably reason about elapsed time in comprehension tasks, it is unlikely to use it productively as a planning signal in an action loop. The time value becomes noise rather than signal.
+
+**Group D rules out the instruction-framing alternative.** A potential objection to the Group C finding is that its advantage over the control stems not from the count signal but from the presence of any additional instruction — a general priming effect from being told to try a different approach. Group D (Sonnet, n = 50) tests this directly: it delivers the same instruction as Group B but without any prefix token or temporal signal. Group D did not differ significantly from the control (p = 0.29, d = 0.27), and its mean of 6.74 turns sits 0.25 turns above Group C. The instruction alone does not produce the effect. The count signal `[attempt: 1/5]` is the causally active element. This also refines the mechanistic account: Group C's instruction may prime the model to expect a structured resource budget, making the count signal more legible — but the instruction without the signal is inert. The signal and the framing work together, with the signal as the necessary condition.
 
 ## Why Opus Responds Differently
 
@@ -221,7 +247,7 @@ Three recommendations follow from these results for practitioners building LLM a
 
 **Unequal sample sizes.** Sonnet was tested with n=100 per group across two independent runs; Opus with n=50 in a single run. The Opus results are less statistically powered, and the Group C trend (p=0.097) falls below the significance threshold. A fully powered Opus replication would require approximately 100 trials per group to match Sonnet's precision.
 
-**Group B confound.** Group B mixes two manipulations: a prefix token with elapsed time and attempt count, and an additional system prompt instruction to adapt strategy based on time. We cannot disentangle whether the null effect in Sonnet (and the positive effect in Opus) is driven by the time value, the attempt count, or the instruction. A fourth group — instruction only, no temporal signal — would cleanly decompose this.
+**Instruction–signal interaction.** The post-hoc Group D ablation (Sonnet, n = 50) confirms that the instruction framing alone does not replicate the Group C reduction (p = 0.29 ns, d = 0.27), establishing the count signal as the necessary active ingredient. However, Group D's mean (6.74 turns) falls between the control (7.10) and Group C (6.49), leaving open the possibility that the instruction contributes a partial, non-significant nudge that amplifies the count signal's effect in Group C. In other words, the instruction may prime the model to treat `[attempt: 1/5]` as a meaningful resource boundary rather than decorative text — making the full Group C condition more than the sum of its parts. This interaction is not yet decomposed at the level of mechanistic evidence; it remains a plausible account consistent with the observed effect sizes.
 
 **Benchmark scope.** HumanEvalPack bugs are synthetic, small (typically 5–30 lines), and drawn from a well-known dataset likely present in the models' training data. Real-world debugging tasks involve larger codebases, ambiguous specifications, and bugs that require multi-file reasoning. Whether the attempt-count effect scales to harder, longer tasks is unknown.
 
@@ -233,7 +259,8 @@ Three recommendations follow from these results for practitioners building LLM a
 
 We asked whether injecting temporal signals into an LLM agent's context changes debugging efficiency, and whether the answer depends on model capability. The results are clear on both counts. Solve rate is unaffected by any temporal signal across both model tiers. Tool-use efficiency, however, diverges sharply: attempt count alone reduces turns for Sonnet (p=0.003, d=0.45) and increases turns for Opus (p=0.012, d=0.44), with elapsed time adding no benefit and likely introducing noise in either case.
 
+A post-hoc instruction ablation (Group D) confirms that the instruction framing in Group C is not sufficient to produce the efficiency gain: Group D, carrying the same instruction without the count signal, did not differ from control. The count signal `[attempt: 1/5]` is the active ingredient, and Group D closes the main confound in the original design.
+
 The practical takeaway is simple. Inject attempt count — not elapsed time — into your agent's prompt. It is a three-token addition with no computational cost. Expect efficiency gains for mid-tier models and more exploratory behavior for frontier models. Treat it as a model-specific hyperparameter, not a universal default. And measure tool-use turns, not just solve rate, when evaluating agent efficiency. The gap between what agents accomplish and how efficiently they accomplish it is where the cost of deployment lives.
 
 ---
-

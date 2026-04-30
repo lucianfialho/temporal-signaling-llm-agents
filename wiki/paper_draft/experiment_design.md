@@ -28,6 +28,7 @@ Groups differed only in what preceded this prompt:
 - **Group A (control):** no prefix — the task prompt above, verbatim.
 - **Group B (time + attempt):** prefix `[session_elapsed: {Xs} | attempt: 1/5]` plus a system prompt addition instructing the agent to use elapsed time to adapt its strategy if stuck.
 - **Group C (attempt only):** prefix `[attempt: 1/5]` with no system prompt addition and no elapsed time.
+- **Group D (instruction only, post-hoc):** no prefix and no temporal signal, but the same system prompt addition as Group B: *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach."* Group D was added after the initial draft to address the instruction confound in Group B: if the Group C effect were driven by the instruction framing rather than the count signal, Group D should replicate it. Group D was run on Sonnet only (n=50).
 
 The elapsed time in Group B was measured from session initialization to the moment the prompt was issued (typically 0–2 seconds for the first attempt, as each trial was a fresh session). The denominator `5` was fixed across all trials.
 
@@ -53,4 +54,4 @@ Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-u
 
 **Model version:** a single model checkpoint was used for all trials within each model tier. No fine-tuning or prompt caching was applied.
 
-**Unblinded groups:** Claude Code's system prompt is visible to the model. Groups B and C include a system prompt addition that is absent in Group A, creating a minor confound between the temporal signal and the presence of any additional instruction. We partially address this in the Discussion.
+**Unblinded groups:** Claude Code's system prompt is visible to the model. Groups B and C include a system prompt addition that is absent in Group A, creating a minor confound between the temporal signal and the presence of any additional instruction. Group D was added post-hoc to decompose this confound: it carries the instruction without the count signal, allowing a clean test of whether the instruction framing alone produces the Group C effect.

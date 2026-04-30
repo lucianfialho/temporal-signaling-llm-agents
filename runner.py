@@ -121,6 +121,12 @@ def run_trial(problem: dict, group: str, problem_idx: int, run_id: int = 1, mode
             "You are a debugging assistant. You will be told how many attempts you've made. "
             "If previous attempts failed, try a different approach."
         )
+    elif group == "D":
+        # Instruction only — same system prompt as B but NO temporal signal in the prompt
+        system_add = (
+            "You are a debugging assistant. As you work, if you're not making progress, "
+            "try a fundamentally different approach."
+        )
 
     # Inject temporal context into the prompt for groups B and C
     elapsed = int(time.time() - trial_start)
@@ -131,7 +137,7 @@ def run_trial(problem: dict, group: str, problem_idx: int, run_id: int = 1, mode
     elif group == "C":
         prompt = f"[attempt: 1/{MAX_ATTEMPTS}]\n\n{base_prompt}"
     else:
-        prompt = base_prompt
+        prompt = base_prompt  # A and D get no prefix
 
     print(f"  [{group}] {task_id} (agent run)...", flush=True)
 
@@ -192,7 +198,7 @@ def main():
     from datasets import load_dataset
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--group", choices=["A", "B", "C"], required=True)
+    parser.add_argument("--group", choices=["A", "B", "C", "D"], required=True)
     parser.add_argument("--n", type=int, default=50, help="Number of problems")
     parser.add_argument("--offset", type=int, default=0, help="Problem offset")
     parser.add_argument("--run-id", type=int, default=1, help="Replication run ID")

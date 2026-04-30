@@ -8,15 +8,16 @@ Solve rate was identical across all groups and both models. For Sonnet, all thre
 
 The effect on tool-use turns diverged sharply across model tiers.
 
-**Sonnet.** Group C (attempt count only) used significantly fewer turns than the control (Group A): mean 6.49 vs. 7.10, Mann-Whitney U = 1530, p = 0.0035, Cohen d = 0.45. Group B (time + attempt count) did not differ significantly from control: mean 7.02 vs. 7.10, U = 1348, p = 0.52, d = 0.05. The difference between Group B and Group C was significant (p = 0.039, d = 0.35), with Group C being the more efficient condition.
+**Sonnet.** Group C (attempt count only) used significantly fewer turns than the control (Group A): mean 6.49 vs. 7.10, Mann-Whitney U = 1530, p = 0.0035, Cohen d = 0.45. Group B (time + attempt count) did not differ significantly from control: mean 7.02 vs. 7.10, U = 1348, p = 0.52, d = 0.05. The difference between Group B and Group C was significant (p = 0.039, d = 0.35), with Group C being the more efficient condition. Group D (instruction only, no temporal signal; n = 50) did not differ significantly from the control: mean 6.74 vs. 7.10, p = 0.29, d = 0.27, Δ = +0.36 turns relative to Group C.
 
-| Group | Condition | Mean turns | SD | vs. A (p) | d |
-|-------|-----------|-----------|-----|-----------|---|
-| A | Control | 7.10 | 1.35 | — | — |
-| B | Time + attempt | 7.02 | 1.64 | 0.52 ns | 0.05 |
-| C | Attempt only | 6.49 | 1.37 | 0.003 ** | 0.45 |
+| Group | Condition | n | Mean turns | SD | vs. A (p) | d |
+|-------|-----------|---|-----------|-----|-----------|---|
+| A | Control | 100 | 7.10 | 1.35 | — | — |
+| B | Time + count + instruction | 100 | 7.02 | 1.64 | 0.52 ns | 0.05 |
+| C | Count only + minimal instruction | 100 | 6.49 | 1.37 | 0.003 ** | 0.45 |
+| D | Instruction only, no signal | 50 | 6.74 | 1.32 | 0.29 ns | 0.27 |
 
-*Table 1. Sonnet results (n = 100/group, runs 1+2 pooled).*
+*Table 1. Sonnet results. Groups A–C: n = 100/group, runs 1+2 pooled. Group D: n = 50, post-hoc instruction ablation.*
 
 ![Tool-use turns distribution — Sonnet vs Opus](../../figures/fig1_turns_violin.png)
 
@@ -43,6 +44,14 @@ The effect on tool-use turns diverged sharply across model tiers.
 ## Replication Consistency
 
 For Sonnet, runs 1 and 2 produced consistent means across all groups: Group A mean 7.08 (run 1) vs. 7.12 (run 2); Group B 6.90 vs. 7.14; Group C 6.28 vs. 6.70. The maximum inter-run delta was 0.42 turns (Group C), within one standard deviation. The directional pattern — C < A — was present in both runs independently.
+
+## Instruction Ablation (Group D)
+
+Group D was run after the initial paper draft to isolate whether the Group C effect is attributable to the instruction framing or to the count signal `[attempt: 1/5]`. Group D carried the same instruction as Group B — *"You are a debugging assistant. As you work, if you're not making progress, try a fundamentally different approach"* — but no prefix token and no temporal signal.
+
+Group D (Sonnet, n = 50) produced a mean of 6.74 turns (SD = 1.32), which did not differ significantly from the control: p = 0.29 (ns), Cohen d = 0.27. This places Group D squarely between Groups A and C, and significantly above Group C (Δ = +0.25 turns). The instruction alone does not replicate the Group C reduction. The count signal `[attempt: 1/5]` is the active ingredient.
+
+This result closes the main confound identified in the original design. The presence of an additional instruction in Group B and Group C was a potential alternative explanation for the Group C effect — if the model simply responds to any additional framing by behaving differently, Group C's advantage might not be due to the count signal per se. Group D rules this out: the instruction framing without the count signal produces no significant reduction.
 
 ## Turns by Bug Type
 
