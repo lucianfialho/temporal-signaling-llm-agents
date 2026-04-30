@@ -92,7 +92,7 @@ We selected Python because it is the primary training language for all models te
 
 ## Agent Setup
 
-We used Claude Code (Anthropic, 2024) as the agent framework in headless mode (`claude -p`), with Bash, Read, and Edit tools enabled. The agent receives a natural-language task description pointing to a file path, runs the test suite, reads the code, applies fixes, and confirms by re-running the tests. All tool calls and intermediate reasoning are handled internally by the agent loop; we observe only the final solve status and the total number of tool-use turns reported by the session.
+We used Claude Code (Anthropic, 2025) as the agent framework in headless mode (`claude -p`), with Bash, Read, and Edit tools enabled. The agent receives a natural-language task description pointing to a file path, runs the test suite, reads the code, applies fixes, and confirms by re-running the tests. All tool calls and intermediate reasoning are handled internally by the agent loop; we observe only the final solve status and the total number of tool-use turns reported by the session.
 
 Two model variants were tested:
 
@@ -148,7 +148,7 @@ Each trial was run as a single Claude Code session. The agent was not interrupte
 
 ## Statistical Analysis
 
-Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-use turn distributions were tested with the Mann-Whitney U test (two-tailed), which makes no distributional assumptions. Effect sizes are reported as Cohen's d for turns and odds ratio for solve rate. The significance threshold is α = 0.05. No corrections for multiple comparisons were applied. The comparison structure (A vs. B, A vs. C, A vs. D per model) was specified before data collection for Groups A–C; Group D was added post-hoc. All findings should be interpreted as exploratory pending pre-registration and replication.
+Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-use turn distributions were tested with the Mann-Whitney U test (two-tailed), which makes no distributional assumptions. Effect sizes are reported as Cohen's d for turns and odds ratio for solve rate. The significance threshold is α = 0.05. No corrections for multiple comparisons were applied. The primary comparisons (A vs. B and A vs. C per model) were specified before data collection; A vs. D was added post-hoc alongside Group D itself. All findings should be interpreted as exploratory pending pre-registration and replication.
 
 ## Controls and Potential Confounds
 
@@ -189,7 +189,7 @@ The effect on tool-use turns diverged sharply across model tiers.
 
 *Figure 1. Distribution of tool-use turns per group for Sonnet (left) and Opus (right). White dots indicate means. Significance brackets show Mann-Whitney U tests (** p<0.01, * p<0.05).*
 
-**Opus.** The pattern reversed. Group B (time + attempt count) used significantly more turns than control: mean 8.26 vs. 7.62, U = 912, p = 0.012, d = 0.44. Group C (attempt only) trended in the same direction but did not reach significance: mean 8.14 vs. 7.62, p = 0.097, d = 0.36. Group B and Group C did not differ from each other (p = 0.49).
+**Opus.** The pattern reversed. Group B (time + attempt count) used significantly more turns than control: mean 8.26 vs. 7.62, U = 912, p = 0.012, d = 0.44. Group C (attempt only) trended in the same direction but did not reach significance: mean 8.14 vs. 7.62, p = 0.097, d = 0.36. Group B and Group C did not differ from each other (p = 0.49). Notably, both treatment conditions showed reduced variance compared to control (SD ≈ 1.17 vs. 1.70 for Group A), suggesting the temporal signal constrained behavioral range in both directions — consistent with the signal anchoring planning depth regardless of whether it increased or decreased mean turns.
 
 | Group | Condition | Mean turns | SD | vs. A (p) | d |
 |-------|-----------|-----------|-----|-----------|---|
@@ -243,7 +243,7 @@ An important design caveat: in this experiment, elapsed time was necessarily nea
 
 This is consistent with the temporal reasoning literature. LoCoMo (Maharana et al., 2024) shows that LLMs underperform on elapsed-time questions by 73 percentage points relative to humans. Alonso et al. (2024) find that semantic retrieval over timestamps achieves 3–6% recall, while ordinal session-number retrieval achieves 90%. If the model cannot reliably reason about elapsed time in comprehension tasks, it is unlikely to use it productively as a planning signal in an action loop. The time value becomes noise rather than signal.
 
-**Group D rules out the instruction-framing alternative.** A potential objection to the Group C finding is that its advantage over the control stems not from the count signal but from the presence of any additional instruction — a general priming effect from being told to try a different approach. Group D (Sonnet, n = 50) tests this directly: it delivers the same instruction as Group B but without any prefix token or temporal signal. Group D did not differ significantly from the control (p = 0.29, d = 0.27), and its mean of 6.74 turns sits 0.25 turns above Group C. The instruction alone does not produce the effect. The count signal `[attempt: 1/5]` is the causally active element. This also refines the mechanistic account: Group C's instruction may prime the model to expect a structured resource budget, making the count signal more legible — but the instruction without the signal is inert. The signal and the framing work together, with the signal as the necessary condition.
+**Group D rules out the instruction-framing alternative.** A potential objection to the Group C finding is that its advantage over the control stems not from the count signal but from the presence of any additional instruction — a general priming effect from being told to try a different approach. Group D (Sonnet, n = 50) tests this directly: it delivers an instruction-only system prompt — without any prefix token or temporal signal — that differs from both Group B (which mentions temporal signals) and Group C (which primes the model to expect attempt count). Group D did not differ significantly from the control (p = 0.29, d = 0.27), and its mean of 6.74 turns sits 0.25 turns above Group C. The instruction alone does not produce the effect. The count signal `[attempt: 1/5]` is the causally active element. This also refines the mechanistic account: Group C's instruction may prime the model to expect a structured resource budget, making the count signal more legible — but the instruction without the signal is inert. The signal and the framing work together, with the signal as the necessary condition.
 
 ## Why Opus Responds Differently
 
@@ -324,6 +324,8 @@ Rorseth, J., Faisal, A., Sinha, M., & Nakayama, K. (2025). TraceCoder: A trace-d
 Sumers, T. R., Yao, S., Narasimhan, K., & Griffiths, T. L. (2023). Cognitive architectures for language agents. *arXiv preprint arXiv:2309.02427*.
 
 Yang, W., Li, Y., Fang, M., & Chen, L. (2024). Enhancing temporal sensitivity and reasoning for time-sensitive question answering. *arXiv preprint arXiv:2409.16909*.
+
+Anthropic. (2025). Claude Code. https://claude.ai/code
 
 ---
 

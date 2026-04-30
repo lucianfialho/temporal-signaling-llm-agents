@@ -8,7 +8,7 @@ We selected Python because it is the primary training language for all models te
 
 ## Agent Setup
 
-We used Claude Code (Anthropic, 2024) as the agent framework in headless mode (`claude -p`), with Bash, Read, and Edit tools enabled. The agent receives a natural-language task description pointing to a file path, runs the test suite, reads the code, applies fixes, and confirms by re-running the tests. All tool calls and intermediate reasoning are handled internally by the agent loop; we observe only the final solve status and the total number of tool-use turns reported by the session.
+We used Claude Code (Anthropic, 2025) as the agent framework in headless mode (`claude -p`), with Bash, Read, and Edit tools enabled. The agent receives a natural-language task description pointing to a file path, runs the test suite, reads the code, applies fixes, and confirms by re-running the tests. All tool calls and intermediate reasoning are handled internally by the agent loop; we observe only the final solve status and the total number of tool-use turns reported by the session.
 
 Two model variants were tested:
 
@@ -64,7 +64,7 @@ Each trial was run as a single Claude Code session. The agent was not interrupte
 
 ## Statistical Analysis
 
-Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-use turn distributions were tested with the Mann-Whitney U test (two-tailed), which makes no distributional assumptions. Effect sizes are reported as Cohen's d for turns and odds ratio for solve rate. The significance threshold is α = 0.05. No corrections for multiple comparisons were applied. The comparison structure (A vs. B, A vs. C, A vs. D per model) was specified before data collection for Groups A–C; Group D was added post-hoc. All findings should be interpreted as exploratory pending pre-registration and replication.
+Solve rate differences were tested with Fisher's exact test (two-tailed). Tool-use turn distributions were tested with the Mann-Whitney U test (two-tailed), which makes no distributional assumptions. Effect sizes are reported as Cohen's d for turns and odds ratio for solve rate. The significance threshold is α = 0.05. No corrections for multiple comparisons were applied. The primary comparisons (A vs. B and A vs. C per model) were specified before data collection; A vs. D was added post-hoc alongside Group D itself. All findings should be interpreted as exploratory pending pre-registration and replication.
 
 ## Controls and Potential Confounds
 

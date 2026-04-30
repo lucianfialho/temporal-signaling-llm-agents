@@ -23,7 +23,7 @@ The effect on tool-use turns diverged sharply across model tiers.
 
 *Figure 1. Distribution of tool-use turns per group for Sonnet (left) and Opus (right). White dots indicate means. Significance brackets show Mann-Whitney U tests (** p<0.01, * p<0.05).*
 
-**Opus.** The pattern reversed. Group B (time + attempt count) used significantly more turns than control: mean 8.26 vs. 7.62, U = 912, p = 0.012, d = 0.44. Group C (attempt only) trended in the same direction but did not reach significance: mean 8.14 vs. 7.62, p = 0.097, d = 0.36. Group B and Group C did not differ from each other (p = 0.49).
+**Opus.** The pattern reversed. Group B (time + attempt count) used significantly more turns than control: mean 8.26 vs. 7.62, U = 912, p = 0.012, d = 0.44. Group C (attempt only) trended in the same direction but did not reach significance: mean 8.14 vs. 7.62, p = 0.097, d = 0.36. Group B and Group C did not differ from each other (p = 0.49). Notably, both treatment conditions showed reduced variance compared to control (SD ≈ 1.17 vs. 1.70 for Group A), suggesting the temporal signal constrained behavioral range in both directions — consistent with the signal anchoring planning depth regardless of whether it increased or decreased mean turns.
 
 | Group | Condition | Mean turns | SD | vs. A (p) | d |
 |-------|-----------|-----------|-----|-----------|---|

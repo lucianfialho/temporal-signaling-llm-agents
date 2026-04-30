@@ -23,3 +23,5 @@ Rorseth, J., Faisal, A., Sinha, M., & Nakayama, K. (2025). TraceCoder: A trace-d
 Sumers, T. R., Yao, S., Narasimhan, K., & Griffiths, T. L. (2023). Cognitive architectures for language agents. *arXiv preprint arXiv:2309.02427*.
 
 Yang, W., Li, Y., Fang, M., & Chen, L. (2024). Enhancing temporal sensitivity and reasoning for time-sensitive question answering. *arXiv preprint arXiv:2409.16909*.
+
+Anthropic. (2025). Claude Code. https://claude.ai/code
