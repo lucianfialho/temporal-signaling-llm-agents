@@ -24,6 +24,16 @@ This is a form of the explore-exploit tradeoff applied to debugging. A more capa
 
 This interpretation is speculative; we cannot observe the agent's internal reasoning directly. But it is consistent with Opus's higher baseline turn count (7.62 vs. Sonnet's 7.10 in the control) and with the literature on capability-dependent self-refinement: Madaan et al. (2023) note that weaker models cannot reliably detect their own failures, and their self-feedback adds noise rather than signal. The inverse may hold for frontier models: stronger models detect success earlier and use additional context to explore more thoroughly before committing.
 
+## Mechanistic Evidence (Preliminary)
+
+To probe whether Group C's efficiency gain reflects explicit use of the count signal or implicit anchoring, we captured the full visible reasoning text from 15 sessions per group (A, C, D) using Claude Code's stream-JSON output. We coded each session for explicit mentions of the attempt signal (words matching: "attempt", "tries", "remaining", "N of M") and for strategy-change language ("different approach", "alternatively", "try instead").
+
+In 14 of 15 Group C sessions (93%), the model never verbalized the attempt count. Reasoning text length was 20% shorter in Group C than control (602 vs. 754 characters on average), and strategy-change language was less frequent (0.33 vs. 0.60 instances per session). Group D (instruction only) fell between the two: reasoning length 684 characters, strategy mentions 0.47 per session — more compressed than control but less so than Group C.
+
+The gradient A > D > C on both reasoning length and strategy mentions mirrors the turn-count gradient, and holds without any explicit verbalization of the signal. This pattern is consistent with **anchoring rather than explicit metareasoning**: the `[attempt: 1/5]` token appears to compress the model's planning horizon implicitly, without the model consciously thinking "I have four more tries." The instruction in Group D achieves a partial compression effect, but the structured count signal in Group C achieves a larger one — without any explicit deliberation about the constraint.
+
+We note two important caveats. First, n=15 per group is insufficient for strong causal claims; the reasoning-length difference (A vs. C: −152 chars) is descriptive, not statistically tested at this sample size. Second, reasoning text length is a proxy for planning depth, not a direct measure of cognitive process. The anchoring interpretation is the most parsimonious account consistent with the data, but mechanistic studies using activation analysis or attribution methods would be needed to confirm it.
+
 ## Practical Implications
 
 Three recommendations follow from these results for practitioners building LLM agent systems:

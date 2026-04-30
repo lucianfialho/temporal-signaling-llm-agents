@@ -6,20 +6,6 @@ lucian@metricasboss.com.br
 
 ---
 
-# Abstract
-
-LLM agents in iterative loops have no built-in sense of how many attempts they have made. We ask whether injecting this information changes debugging efficiency — and whether the effect depends on model capability.
-
-We ran a controlled experiment on HumanEvalPack Python bugs using Claude Code as the agent, testing three conditions: no temporal signal (control), elapsed time + attempt count (Group B), and attempt count alone (Group C). We replicated across two model tiers: Sonnet (n=100/group) and Opus (n=50/group).
-
-Solve rate was identical across all groups (~98–100%). The effect on tool-use turns was opposite across models: Sonnet's Group C used significantly fewer turns than control (p=0.003, d=0.45), while Opus's Group B used significantly more (p=0.012, d=0.44). Elapsed time added noise for Sonnet and amplified exploration for Opus.
-
-A post-hoc instruction ablation (Group D, Sonnet, n=50) — carrying the instruction framing without any temporal signal — produced no significant reduction relative to control (p=0.29, d=0.27), confirming that the count signal `[attempt: 1/5]` is the active ingredient in Group C, not the instruction framing.
-
-We conclude that attempt count is a low-cost signal with model-dependent effects: it induces efficiency in mid-tier models and exploratory behavior in frontier models — a distinction with direct implications for agent system design.
-
----
-
 # Introduction
 
 LLM-based agents deployed on iterative tasks — debugging, code generation, tool use — operate without any built-in sense of how long they have been working or how many attempts they have made. Each turn in the agent loop is processed with the same context as the first. This is not a fundamental limitation of the architecture, but a design choice: the harness simply does not inject this information.
@@ -229,6 +215,16 @@ This is a form of the explore-exploit tradeoff applied to debugging. A more capa
 
 This interpretation is speculative; we cannot observe the agent's internal reasoning directly. But it is consistent with Opus's higher baseline turn count (7.62 vs. Sonnet's 7.10 in the control) and with the literature on capability-dependent self-refinement: Madaan et al. (2023) note that weaker models cannot reliably detect their own failures, and their self-feedback adds noise rather than signal. The inverse may hold for frontier models: stronger models detect success earlier and use additional context to explore more thoroughly before committing.
 
+## Mechanistic Evidence (Preliminary)
+
+To probe whether Group C's efficiency gain reflects explicit use of the count signal or implicit anchoring, we captured the full visible reasoning text from 15 sessions per group (A, C, D) using Claude Code's stream-JSON output. We coded each session for explicit mentions of the attempt signal (words matching: "attempt", "tries", "remaining", "N of M") and for strategy-change language ("different approach", "alternatively", "try instead").
+
+In 14 of 15 Group C sessions (93%), the model never verbalized the attempt count. Reasoning text length was 20% shorter in Group C than control (602 vs. 754 characters on average), and strategy-change language was less frequent (0.33 vs. 0.60 instances per session). Group D (instruction only) fell between the two: reasoning length 684 characters, strategy mentions 0.47 per session — more compressed than control but less so than Group C.
+
+The gradient A > D > C on both reasoning length and strategy mentions mirrors the turn-count gradient, and holds without any explicit verbalization of the signal. This pattern is consistent with **anchoring rather than explicit metareasoning**: the `[attempt: 1/5]` token appears to compress the model's planning horizon implicitly, without the model consciously thinking "I have four more tries." The instruction in Group D achieves a partial compression effect, but the structured count signal in Group C achieves a larger one — without any explicit deliberation about the constraint.
+
+We note two important caveats. First, n=15 per group is insufficient for strong causal claims; the reasoning-length difference (A vs. C: −152 chars) is descriptive, not statistically tested at this sample size. Second, reasoning text length is a proxy for planning depth, not a direct measure of cognitive process. The anchoring interpretation is the most parsimonious account consistent with the data, but mechanistic studies using activation analysis or attribution methods would be needed to confirm it.
+
 ## Practical Implications
 
 Three recommendations follow from these results for practitioners building LLM agent systems:
@@ -259,8 +255,7 @@ Three recommendations follow from these results for practitioners building LLM a
 
 We asked whether injecting temporal signals into an LLM agent's context changes debugging efficiency, and whether the answer depends on model capability. The results are clear on both counts. Solve rate is unaffected by any temporal signal across both model tiers. Tool-use efficiency, however, diverges sharply: attempt count alone reduces turns for Sonnet (p=0.003, d=0.45) and increases turns for Opus (p=0.012, d=0.44), with elapsed time adding no benefit and likely introducing noise in either case.
 
-A post-hoc instruction ablation (Group D) confirms that the instruction framing in Group C is not sufficient to produce the efficiency gain: Group D, carrying the same instruction without the count signal, did not differ from control. The count signal `[attempt: 1/5]` is the active ingredient, and Group D closes the main confound in the original design.
-
 The practical takeaway is simple. Inject attempt count — not elapsed time — into your agent's prompt. It is a three-token addition with no computational cost. Expect efficiency gains for mid-tier models and more exploratory behavior for frontier models. Treat it as a model-specific hyperparameter, not a universal default. And measure tool-use turns, not just solve rate, when evaluating agent efficiency. The gap between what agents accomplish and how efficiently they accomplish it is where the cost of deployment lives.
 
 ---
+

@@ -30,6 +30,8 @@ This wiki documents the literature, concepts, experimental design, and in-progre
 
 - `experiment/design.md` — Experimental design, groups A/B/C, stimuli, and procedure (to be created).
 - [Experiment Results](experiment/results.md) — Quantitative results: solve rate, tool-use turns, statistical tests for both Claude Sonnet and Claude Opus.
+- [CoT Mechanism Analysis](experiment/cot_mechanism.md) — Does the model verbalize the signal (H1) or use it implicitly (H2)? In-progress.
+- [CoT Findings](experiment/cot_findings.md) — **H2 confirmed**: anchoring, not explicit cognition. Group C reasons 20% shorter without verbalizing the signal.
 - `experiment/stimuli.md` — HumanEvalPack problem set, selection criteria, difficulty distribution (to be created).
 
 ---
